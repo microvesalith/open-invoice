@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Invoice Editor</title>
+    <!-- pdfmake libraries for client-side PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.5;
+            padding-bottom: 80px; /* Space for sticky footer */
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+        }
+        .btn:hover { background: #f1f5f9; }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { color: var(--danger); border-color: var(--danger); }
+        .btn-danger:hover { background: #fef2f2; }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+
+        /* Party Management Grid */
+        .parties-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .parties-grid { grid-template-columns: 1fr; }
+        }
+
+        .party-box {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .party-box h2 { margin-top: 0; font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .field-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; }
+        select, input, textarea {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 100px; }
+
+        .party-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Invoice Main Editor */
+        .invoice-editor {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .invoice-meta {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Line Items Table */
+        .table-container { overflow-x: auto; margin: 1.5rem 0; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        
+        .col-desc { width: 40%; }
+        .col-amt { width: 15%; }
+        .col-pct { width: 10%; }
+        .col-sign { width: 15%; }
+        .col-eff { width: 15%; text-align: right; font-weight: 600; }
+        .col-actions { width: 5%; text-align: center; }
+
+        input[type="number"] { text-align: right; }
+
+        /* Totals Panel */
+        .totals-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            font-size: 1rem;
+        }
+        .total-row.grand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary);
+            border-top: 1px solid var(--border);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .vat-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .vat-controls input[type="number"] { width: 70px; padding: 0.3rem; }
+
+        /* Modal Styles */
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h3 { margin: 0; }
+        .modal-body p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
+        .storage-counts {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+        .import-actions { border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem; }
+
+        /* Sticky Footer */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+        footer a { color: #38bdf8; text-decoration: none; margin-left: 0.5rem; cursor: pointer; }
+        footer a:hover { text-decoration: underline; }
+
+        /* Utility */
+        .status-msg {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            background: #1e293b;
+            color: white;
+            font-size: 0.9rem;
+            transform: translateY(-100px);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .status-msg.show { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div id="status" class="status-msg"></div>
+
+    <div class="container">
+        <header>
+            <h1>Private Invoice Editor</h1>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn" onclick="saveDraft()">Save Draft</button>
+                <button class="btn btn-primary" onclick="generatePDF()">Download PDF</button>
+            </div>
+        </header>
+
+        <!-- Parties Management -->
+        <div class="parties-grid">
+            <!-- From -->
+            <div class="party-box">
+                <h2>From</h2>
+                <div class="field-group">
+                    <label for="fromSelect">Select Saved</label>
+                    <select id="fromSelect" onchange="loadPartyToTextarea('from')">
+                        <option value="">-- New / Manual --</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="fromText">Details (Address, VAT, IBAN...)</label>
+                    <textarea id="fromText" placeholder="Your business name&#10;Address&#10;VAT ID&#10;IBAN"></textarea>
+                </div>
+                <div class="party-actions">
+                    <button class="btn btn-sm" onclick="handleSaveNew('from')">Save New</button>
+                    <button class="btn btn-sm" onclick="handleUpdate('from')">Update</button>
+                    <button class="btn btn-sm btn-danger" onclick="handleDelete('from')">Delete</button>
+                </div>
+            </div>
+
+            <!-- To -->
+            <div class="party-box">
+                <h2>To</h2>
+                <div class="field-group">
+                    <label for="toSelect">Select Saved</label>
+                    <select id="toSelect" onchange="loadPartyToTextarea('to')">
+                        <option value="">-- New / Manual --</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="toText">Client Details</label>
+                    <textarea id="toText" placeholder="Client Name&#10;Client Address&#10;Contact Person"></textarea>
+                </div>
+                <div class="party-actions">
+                    <button class="btn btn-sm" onclick="handleSaveNew('to')">Save New</button>
+                    <button class="btn btn-sm" onclick="handleUpdate('to')">Update</button>
+                    <button class="btn btn-sm btn-danger" onclick="handleDelete('to')">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Invoice Editor -->
+        <div class="invoice-editor">
+            <div class="invoice-meta">
+                <div class="field-group">
+                    <label for="invTitle">Invoice Title</label>
+                    <input type="text" id="invTitle" placeholder="Invoice #2026-001" value="Invoice #2026-001">
+                </div>
+                <div class="field-group">
+                    <label for="currency">Currency</label>
+                    <select id="currency" onchange="updateCurrency()">
+                        <option value="EUR">EUR (€)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="JPY">JPY (¥)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="lineItems">
+                    <thead>
+                        <tr>
+                            <th class="col-desc">Description</th>
+                            <th class="col-amt">Amount</th>
+                            <th class="col-pct">% (opt)</th>
+                            <th class="col-sign">Sign</th>
+                            <th class="col-eff">Effective</th>
+                            <th class="col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemsBody">
+                        <!-- Rows added via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn btn-sm" onclick="addLineItem()">+ Add Line</button>
+
+            <div class="field-group" style="margin-top: 2rem;">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="Payment terms, bank details, or thank you message..."></textarea>
+            </div>
+
+            <div class="totals-panel">
+                <div class="total-row">
+                    <span>Subtotal</span>
+                    <span id="subtotalDisplay">€ 0.00</span>
+                </div>
+                <div class="total-row">
+                    <div class="vat-controls">
+                        <input type="checkbox" id="vatEnabled" onchange="recompute()">
+                        <label for="vatEnabled" style="margin:0">VAT (%)</label>
+                        <input type="number" id="vatPercent" value="21" step="0.01" min="0" max="99.99" oninput="recompute()">
+                    </div>
+                    <span id="vatAmountDisplay">€ 0.00</span>
+                </div>
+                <div class="total-row grand">
+                    <span>Total</span>
+                    <span id="grandTotalDisplay">€ 0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        no tracking, no cookies, no data copied, all is client side, private.
+        <a onclick="openPrivacyModal()">Learn more</a>
+    </footer>
+
+    <!-- Privacy & Storage Modal -->
+    <dialog id="privacyModal">
+        <div class="modal-header">
+            <h3>Storage & Privacy</h3>
+            <button class="btn btn-sm" onclick="document.getElementById('privacyModal').close()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>This application is 100% client-side. Your data never leaves your browser.</p>
+            <ul>
+                <li><strong>Local Storage:</strong> Data is kept in your browser's <code>localStorage</code>.</li>
+                <li><strong>Keys:</strong> <code>invapp.parties</code>, <code>invapp.lastDraft</code>, <code>invapp.settings</code>.</li>
+                <li><strong>Deletion:</strong> You can delete specific entries or use the "Clear All" button below.</li>
+            </ul>
+
+            <div class="storage-counts" id="storageCounts">
+                Loading counts...
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <button class="btn btn-sm" onclick="exportData()">Export JSON</button>
+                <button class="btn btn-sm btn-danger" onclick="clearAllData()">Clear ALL data</button>
+            </div>
+
+            <div class="import-actions">
+                <label>Import Data (JSON)</label>
+                <input type="file" id="importFile" accept=".json" style="margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="replaceToggle">
+                    <label for="replaceToggle" style="margin:0; font-weight: normal;">Replace All (Wipe existing first)</label>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="handleImport()">Process Import</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        /**
+         * STORAGE MODULE
+         */
+        const KEYS = {
+            PARTIES: 'invapp.parties',
+            DRAFT: 'invapp.lastDraft',
+            SETTINGS: 'invapp.settings'
+        };
+
+        const getStorage = (key, fallback) => {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : fallback;
+        };
+
+        const setStorage = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+
+        /**
+         * DATA STATE
+         */
+        let parties = getStorage(KEYS.PARTIES, { from: [], to: [] });
+        let settings = getStorage(KEYS.SETTINGS, { currency: 'EUR', locale: 'nl-NL' });
+        
+        /**
+         * MONEY HELPERS
+         */
+        function getFormatter() {
+            return new Intl.NumberFormat(settings.locale, {
+                style: 'currency',
+                currency: settings.currency
+            });
+        }
+
+        function formatMoney(amount) {
+            return getFormatter().format(amount || 0);
+        }
+
+        /**
+         * UI STATE & INIT
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            hydrateDropdowns();
+            loadDraft();
+            updateCurrency();
+            
+            // Add initial row if draft is empty
+            if (document.querySelectorAll('.item-row').length === 0) {
+                addLineItem();
+            }
+        });
+
+        function showStatus(msg) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        /**
+         * PARTY MANAGEMENT
+         */
+        function hydrateDropdowns() {
+            ['from', 'to'].forEach(kind => {
+                const select = document.getElementById(`${kind}Select`);
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- New / Manual --</option>';
+                parties[kind].sort((a,b) => b.createdAt - a.createdAt).forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.label;
+                    select.appendChild(opt);
+                });
+                select.value = currentVal;
+            });
+        }
+
+        function loadPartyToTextarea(kind) {
+            const id = document.getElementById(`${kind}Select`).value;
+            const textarea = document.getElementById(`${kind}Text`);
+            if (!id) return;
+            const entry = parties[kind].find(p => p.id === id);
+            if (entry) textarea.value = entry.text;
+        }
+
+        function handleSaveNew(kind) {
+            const text = document.getElementById(`${kind}Text`).value.trim();
+            if (!text) return alert("Please enter details first.");
+            const label = prompt("Enter a label for this contact (e.g. Company Name):");
+            if (!label) return;
+
+            const newEntry = {
+                id: crypto.randomUUID(),
+                label: label,
+                text: text,
+                createdAt: Date.now()
+            };
+
+            parties[kind].push(newEntry);
+            setStorage(KEYS.PARTIES, parties);
+            hydrateDropdowns();
+            document.getElementById(`${kind}Select`).value = newEntry.id;
+            showStatus(`Saved new ${kind} entry.`);
+        }
+
+        function handleUpdate(kind) {
+            const id = document.getElementById(`${kind}Select`).value;
+            if (!id) return alert("Select a saved entry to update.");
+            const text = document.getElementById(`${kind}Text`).value.trim();
+            
+            const idx = parties[kind].findIndex(p => p.id === id);
+            if (idx === -1) return;
+
+            const newLabel = prompt("Update label?", parties[kind][idx].label);
+            if (newLabel !== null) parties[kind][idx].label = newLabel;
+            parties[kind][idx].text = text;
+
+            setStorage(KEYS.PARTIES, parties);
+            hydrateDropdowns();
+            showStatus(`Updated ${kind} entry.`);
+        }
+
+        function handleDelete(kind) {
+            const id = document.getElementById(`${kind}Select`).value;
+            if (!id) return;
+            if (!confirm("Are you sure you want to delete this saved entry?")) return;
+
+            parties[kind] = parties[kind].filter(p => p.id !== id);
+            setStorage(KEYS.PARTIES, parties);
+            document.getElementById(`${kind}Text`).value = '';
+            hydrateDropdowns();
+            showStatus(`Deleted ${kind} entry.`);
+        }
+
+        /**
+         * INVOICE LOGIC
+         */
+        function addLineItem(data = {}) {
+            const tbody = document.getElementById('lineItemsBody');
+            const row = document.createElement('tr');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <td class="col-desc"><textarea class="in-desc" placeholder="Work description...">${data.desc || ''}</textarea></td>
+                <td class="col-amt"><input type="number" class="in-amt" value="${data.amt || 0}" step="0.01" oninput="recompute()"></td>
+                <td class="col-pct"><input type="number" class="in-pct" value="${data.pct || ''}" step="1" min="0" max="100" placeholder="-" oninput="recompute()"></td>
+                <td class="col-sign">
+                    <select class="in-sign" onchange="recompute()">
+                        <option value="add" ${data.sign === 'deduct' ? '' : 'selected'}>+ Add</option>
+                        <option value="deduct" ${data.sign === 'deduct' ? 'selected' : ''}>− Deduct</option>
+                    </select>
+                </td>
+                <td class="col-eff"><span class="eff-val">0.00</span></td>
+                <td class="col-actions"><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); recompute();">✕</button></td>
+            `;
+            tbody.appendChild(row);
+            recompute();
+        }
+
+        function recompute() {
+            let subtotal = 0;
+            const rows = document.querySelectorAll('.item-row');
+            
+            rows.forEach(row => {
+                const amt = parseFloat(row.querySelector('.in-amt').value) || 0;
+                const pct = parseFloat(row.querySelector('.in-pct').value);
+                const sign = row.querySelector('.in-sign').value;
+
+                let effective = amt;
+                if (!isNaN(pct)) {
+                    effective = amt * (Math.min(100, Math.max(0, pct)) / 100);
+                }
+
+                if (sign === 'deduct') effective = -effective;
+
+                row.querySelector('.eff-val').textContent = formatMoney(effective);
+                subtotal += effective;
+            });
+
+            const vatEnabled = document.getElementById('vatEnabled').checked;
+            const vatPercent = parseFloat(document.getElementById('vatPercent').value) || 0;
+            const vatAmount = vatEnabled ? (subtotal * (Math.min(99.99, Math.max(0, vatPercent)) / 100)) : 0;
+            const grandTotal = subtotal + vatAmount;
+
+            document.getElementById('subtotalDisplay').textContent = formatMoney(subtotal);
+            document.getElementById('vatAmountDisplay').textContent = formatMoney(vatAmount);
+            document.getElementById('grandTotalDisplay').textContent = formatMoney(grandTotal);
+
+            return { subtotal, vatAmount, grandTotal };
+        }
+
+        function updateCurrency() {
+            settings.currency = document.getElementById('currency').value;
+            // Simple logic: if USD or GBP, use en-US/en-GB locales for formatting
+            if (settings.currency === 'USD') settings.locale = 'en-US';
+            else if (settings.currency === 'GBP') settings.locale = 'en-GB';
+            else if (settings.currency === 'JPY') settings.locale = 'ja-JP';
+            else settings.locale = 'nl-NL';
+
+            setStorage(KEYS.SETTINGS, settings);
+            recompute();
+        }
+
+        /**
+         * DRAFT MANAGEMENT
+         */
+        function saveDraft() {
+            const data = {
+                title: document.getElementById('invTitle').value,
+                notes: document.getElementById('notes').value,
+                fromText: document.getElementById('fromText').value,
+                toText: document.getElementById('toText').value,
+                vatEnabled: document.getElementById('vatEnabled').checked,
+                vatPercent: document.getElementById('vatPercent').value,
+                currency: document.getElementById('currency').value,
+                items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                    desc: row.querySelector('.in-desc').value,
+                    amt: row.querySelector('.in-amt').value,
+                    pct: row.querySelector('.in-pct').value,
+                    sign: row.querySelector('.in-sign').value
+                }))
+            };
+            setStorage(KEYS.DRAFT, data);
+            showStatus("Draft saved locally.");
+        }
+
+        function loadDraft() {
+            const data = getStorage(KEYS.DRAFT, null);
+            if (!data) return;
+
+            document.getElementById('invTitle').value = data.title || '';
+            document.getElementById('notes').value = data.notes || '';
+            document.getElementById('fromText').value = data.fromText || '';
+            document.getElementById('toText').value = data.toText || '';
+            document.getElementById('vatEnabled').checked = data.vatEnabled || false;
+            document.getElementById('vatPercent').value = data.vatPercent || 21;
+            document.getElementById('currency').value = data.currency || 'EUR';
+
+            const tbody = document.getElementById('lineItemsBody');
+            tbody.innerHTML = '';
+            (data.items || []).forEach(item => addLineItem(item));
+            recompute();
+        }
+
+        /**
+         * MODAL & PRIVACY TOOLS
+         */
+        function openPrivacyModal() {
+            const modal = document.getElementById('privacyModal');
+            const countsEl = document.getElementById('storageCounts');
+            
+            const fromCount = parties.from.length;
+            const toCount = parties.to.length;
+            const draftExists = !!localStorage.getItem(KEYS.DRAFT);
+            
+            countsEl.innerHTML = `
+                <strong>Storage Counts:</strong><br>
+                • Saved 'From': ${fromCount}<br>
+                • Saved 'To': ${toCount}<br>
+                • Draft Invoice: ${draftExists ? 'Yes' : 'No'}
+            `;
+            
+            modal.showModal();
+        }
+
+        function clearAllData() {
+            if (!confirm("Are you SURE? This wipes all saved contacts and your current draft. This cannot be undone.")) return;
+            localStorage.removeItem(KEYS.PARTIES);
+            localStorage.removeItem(KEYS.DRAFT);
+            localStorage.removeItem(KEYS.SETTINGS);
+            location.reload();
+        }
+
+        function exportData() {
+            const allData = {
+                parties: parties,
+                draft: getStorage(KEYS.DRAFT, {}),
+                settings: settings,
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function handleImport() {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files[0]) return alert("Select a JSON file first.");
+            
+            const file = fileInput.files[0];
+            const text = await file.text();
+            try {
+                const data = JSON.parse(text);
+                const replace = document.getElementById('replaceToggle').checked;
+
+                if (replace) {
+                    if (!confirm("Replacing will wipe current data. Continue?")) return;
+                    parties = data.parties || { from: [], to: [] };
+                    if (data.draft) setStorage(KEYS.DRAFT, data.draft);
+                    if (data.settings) setStorage(KEYS.SETTINGS, data.settings);
+                } else {
+                    // Merge logic
+                    const merge = (list, incoming) => {
+                        const existingIds = new Set(list.map(p => p.id));
+                        incoming.forEach(p => {
+                            if (!existingIds.has(p.id)) list.push(p);
+                        });
+                    };
+                    if (data.parties) {
+                        merge(parties.from, data.parties.from || []);
+                        merge(parties.to, data.parties.to || []);
+                    }
+                }
+
+                setStorage(KEYS.PARTIES, parties);
+                showStatus("Import successful. Reloading...");
+                setTimeout(() => location.reload(), 1000);
+
+            } catch (e) {
+                alert("Invalid JSON file.");
+            }
+        }
+
+        /**
+         * PDF GENERATION
+         */
+        function generatePDF() {
+            const title = document.getElementById('invTitle').value;
+            const fromText = document.getElementById('fromText').value;
+            const toText = document.getElementById('toText').value;
+            const notes = document.getElementById('notes').value;
+            const { subtotal, vatAmount, grandTotal } = recompute();
+            const vatEnabled = document.getElementById('vatEnabled').checked;
+            const vatPercent = document.getElementById('vatPercent').value;
+
+            const rows = Array.from(document.querySelectorAll('.item-row')).map(row => {
+                const desc = row.querySelector('.in-desc').value;
+                const amt = parseFloat(row.querySelector('.in-amt').value) || 0;
+                const pct = parseFloat(row.querySelector('.in-pct').value);
+                const signVal = row.querySelector('.in-sign').value;
+                
+                let eff = amt;
+                if (!isNaN(pct)) eff = amt * (pct/100);
+                if (signVal === 'deduct') eff = -eff;
+
+                return [
+                    desc,
+                    formatMoney(amt),
+                    isNaN(pct) ? '-' : `${pct}%`,
+                    signVal === 'deduct' ? '−' : '+',
+                    { text: formatMoney(eff), alignment: 'right', bold: true }
+                ];
+            });
+
+            const docDefinition = {
+                content: [
+                    {
+                        columns: [
+                            { text: 'INVOICE', fontSize: 24, bold: true, color: '#2563eb' },
+                            { text: new Date().toLocaleDateString(), alignment: 'right', margin: [0, 10, 0, 0] }
+                        ]
+                    },
+                    { text: title, fontSize: 14, margin: [0, 0, 0, 20] },
+                    {
+                        columns: [
+                            [
+                                { text: 'FROM', fontSize: 10, color: '#64748b', bold: true },
+                                { text: fromText, margin: [0, 5, 0, 20] }
+                            ],
+                            [
+                                { text: 'TO', fontSize: 10, color: '#64748b', bold: true, alignment: 'right' },
+                                { text: toText, margin: [0, 5, 0, 20], alignment: 'right' }
+                            ]
+                        ]
+                    },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+                            body: [
+                                [
+                                    { text: 'Description', fillHighlight: true, bold: true, color: '#64748b' },
+                                    { text: 'Amount', bold: true, color: '#64748b' },
+                                    { text: '%', bold: true, color: '#64748b' },
+                                    { text: 'Sign', bold: true, color: '#64748b' },
+                                    { text: 'Effective', bold: true, color: '#64748b', alignment: 'right' }
+                                ],
+                                ...rows
+                            ]
+                        },
+                        layout: 'lightHorizontalLines',
+                        margin: [0, 20, 0, 20]
+                    },
+                    {
+                        columns: [
+                            { text: '', width: '*' },
+                            {
+                                width: 200,
+                                stack: [
+                                    {
+                                        columns: [
+                                            { text: 'Subtotal:', color: '#64748b' },
+                                            { text: formatMoney(subtotal), alignment: 'right' }
+                                        ]
+                                    },
+                                    vatEnabled ? {
+                                        columns: [
+                                            { text: `VAT (${vatPercent}%):`, color: '#64748b' },
+                                            { text: formatMoney(vatAmount), alignment: 'right' }
+                                        ],
+                                        margin: [0, 5, 0, 0]
+                                    } : null,
+                                    { canvas: [{ type: 'line', x1: 0, y1: 10, x2: 200, y2: 10, lineWidth: 1, lineColor: '#e2e8f0' }] },
+                                    {
+                                        columns: [
+                                            { text: 'GRAND TOTAL', bold: true, fontSize: 14 },
+                                            { text: formatMoney(grandTotal), bold: true, fontSize: 14, alignment: 'right' }
+                                        ],
+                                        margin: [0, 15, 0, 0]
+                                    }
+                                ].filter(Boolean)
+                            }
+                        ]
+                    },
+                    notes ? {
+                        stack: [
+                            { text: 'NOTES', fontSize: 10, color: '#64748b', bold: true, margin: [0, 40, 0, 5] },
+                            { text: notes, fontSize: 9 }
+                        ]
+                    } : null
+                ],
+                styles: {
+                    defaultStyle: { font: 'Roboto' }
+                },
+                defaultStyle: {
+                    fontSize: 10
+                }
+            };
+
+            pdfMake.createPdf(docDefinition).download('invoice.pdf');
+            showStatus("PDF generated.");
+        }
+    </script>
+</body>
+</html>
