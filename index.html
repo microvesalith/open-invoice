@@ -33,23 +33,31 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             border-bottom: 2px solid var(--border);
             padding-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            header { flex-direction: column; align-items: flex-start; }
+            header h1 { font-size: 1.25rem; }
+            .header-actions { width: 100%; display: flex; justify-content: space-between; }
+            .header-actions .btn { flex: 1; justify-content: center; }
         }
 
         h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
 
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
             border: 1px solid var(--border);
             cursor: pointer;
             font-weight: 500;
@@ -58,20 +66,23 @@
             align-items: center;
             gap: 0.5rem;
             background: white;
+            font-size: 0.95rem;
+            user-select: none;
         }
         .btn:hover { background: #f1f5f9; }
+        .btn:active { transform: translateY(1px); }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
         .btn-primary:hover { background: var(--primary-hover); }
         .btn-danger { color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover { background: #fef2f2; }
-        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+        .btn-sm { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
 
         /* Party Management Grid */
         .parties-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         @media (max-width: 768px) {
@@ -80,25 +91,31 @@
 
         .party-box {
             background: var(--card);
-            padding: 1.5rem;
+            padding: 1.25rem;
             border-radius: 12px;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .party-box h2 { margin-top: 0; font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .party-box h2 { margin-top: 0; font-size: 1rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
         .field-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-muted); }
         select, input, textarea {
             width: 100%;
-            padding: 0.6rem;
+            padding: 0.75rem;
             border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.95rem;
+            border-radius: 8px;
+            font-size: 1rem; /* Better for mobile zoom avoidance */
             font-family: inherit;
+            background: #fff;
         }
-        textarea { resize: vertical; min-height: 100px; }
+        textarea { resize: vertical; min-height: 80px; }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
 
         .party-actions {
             display: flex;
@@ -106,28 +123,33 @@
             gap: 0.5rem;
             margin-top: 1rem;
         }
+        .party-actions .btn { flex: 1 1 auto; min-width: 80px; text-align: center; justify-content: center; }
 
         /* Invoice Main Editor */
         .invoice-editor {
             background: var(--card);
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px -1px rgba(0,0,0,0.05);
         }
 
         .invoice-meta {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .invoice-meta { grid-template-columns: 1fr; }
+            .invoice-editor { padding: 1rem; }
         }
 
-        /* Line Items Table */
-        .table-container { overflow-x: auto; margin: 1.5rem 0; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        /* Line Items Table - Responsive Card Logic */
+        .table-container { margin: 1.5rem 0; }
+        table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
-        td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
         
         .col-desc { width: 40%; }
         .col-amt { width: 15%; }
@@ -135,6 +157,54 @@
         .col-sign { width: 15%; }
         .col-eff { width: 15%; text-align: right; font-weight: 600; }
         .col-actions { width: 5%; text-align: center; }
+
+        /* MOBILE TABLE TRANSFORMATION */
+        @media (max-width: 640px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            .item-row {
+                background: #f8fafc;
+                margin-bottom: 1rem;
+                padding: 1rem;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                position: relative;
+            }
+            .item-row td {
+                border: none;
+                padding: 0.25rem 0;
+                width: 100% !important;
+                text-align: left !important;
+            }
+            .item-row .col-desc { margin-bottom: 0.5rem; }
+            .item-row .col-desc textarea { min-height: 60px; font-weight: 500; }
+            
+            /* Grid layout for numeric inputs on mobile */
+            .item-row .mobile-grid {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .item-row .col-eff {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #fff;
+                padding: 0.5rem;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                margin-top: 0.5rem;
+            }
+            .item-row .col-eff::before { content: 'Effective:'; font-weight: normal; color: var(--text-muted); font-size: 0.85rem; }
+            
+            .item-row .col-actions {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                width: auto !important;
+            }
+        }
 
         input[type="number"] { text-align: right; }
 
@@ -164,21 +234,25 @@
             margin-top: 0.5rem;
         }
 
+        @media (max-width: 400px) {
+            .total-row { width: 100%; }
+        }
+
         .vat-controls {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             font-size: 0.9rem;
         }
-        .vat-controls input[type="number"] { width: 70px; padding: 0.3rem; }
+        .vat-controls input[type="number"] { width: 70px; padding: 0.4rem; }
 
         /* Modal Styles */
         dialog {
             border: none;
             border-radius: 12px;
-            padding: 2rem;
+            padding: 1.5rem;
             max-width: 500px;
-            width: 90%;
+            width: 95%;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
         dialog::backdrop { background: rgba(0,0,0,0.5); }
@@ -202,30 +276,32 @@
             right: 0;
             background: #1e293b;
             color: #f8fafc;
-            padding: 0.75rem;
+            padding: 1rem;
             text-align: center;
             font-size: 0.8rem;
             z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
-        footer a { color: #38bdf8; text-decoration: none; margin-left: 0.5rem; cursor: pointer; }
+        footer a { color: #38bdf8; text-decoration: none; margin-left: 0.5rem; cursor: pointer; padding: 5px; }
         footer a:hover { text-decoration: underline; }
 
         /* Utility */
         .status-msg {
             position: fixed;
             top: 1rem;
-            right: 1rem;
+            left: 50%;
+            transform: translate(-50%, -100px);
             padding: 0.75rem 1.25rem;
-            border-radius: 8px;
+            border-radius: 50px;
             background: #1e293b;
             color: white;
             font-size: 0.9rem;
-            transform: translateY(-100px);
             transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
             z-index: 1000;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            white-space: nowrap;
         }
-        .status-msg.show { transform: translateY(0); }
+        .status-msg.show { transform: translate(-50%, 0); }
     </style>
 </head>
 <body>
@@ -234,10 +310,10 @@
 
     <div class="container">
         <header>
-            <h1>Private Invoice Editor</h1>
-            <div style="display: flex; gap: 0.5rem;">
+            <h1>Invoice Editor</h1>
+            <div class="header-actions">
                 <button class="btn" onclick="saveDraft()">Save Draft</button>
-                <button class="btn btn-primary" onclick="generatePDF()">Download PDF</button>
+                <button class="btn btn-primary" onclick="generatePDF()">Download</button>
             </div>
         </header>
 
@@ -253,13 +329,13 @@
                     </select>
                 </div>
                 <div class="field-group">
-                    <label for="fromText">Details (Address, VAT, IBAN...)</label>
+                    <label for="fromText">Your Details</label>
                     <textarea id="fromText" placeholder="Your business name&#10;Address&#10;VAT ID&#10;IBAN"></textarea>
                 </div>
                 <div class="party-actions">
                     <button class="btn btn-sm" onclick="handleSaveNew('from')">Save New</button>
                     <button class="btn btn-sm" onclick="handleUpdate('from')">Update</button>
-                    <button class="btn btn-sm btn-danger" onclick="handleDelete('from')">Delete</button>
+                    <button class="btn btn-sm btn-danger" onclick="handleDelete('from')">✕</button>
                 </div>
             </div>
 
@@ -279,7 +355,7 @@
                 <div class="party-actions">
                     <button class="btn btn-sm" onclick="handleSaveNew('to')">Save New</button>
                     <button class="btn btn-sm" onclick="handleUpdate('to')">Update</button>
-                    <button class="btn btn-sm btn-danger" onclick="handleDelete('to')">Delete</button>
+                    <button class="btn btn-sm btn-danger" onclick="handleDelete('to')">✕</button>
                 </div>
             </div>
         </div>
@@ -319,11 +395,11 @@
                     </tbody>
                 </table>
             </div>
-            <button class="btn btn-sm" onclick="addLineItem()">+ Add Line</button>
+            <button class="btn btn-sm" onclick="addLineItem()">+ Add Line Item</button>
 
             <div class="field-group" style="margin-top: 2rem;">
-                <label for="notes">Notes</label>
-                <textarea id="notes" placeholder="Payment terms, bank details, or thank you message..."></textarea>
+                <label for="notes">Internal / Footer Notes</label>
+                <textarea id="notes" placeholder="Payment terms, bank details..."></textarea>
             </div>
 
             <div class="totals-panel">
@@ -340,7 +416,7 @@
                     <span id="vatAmountDisplay">€ 0.00</span>
                 </div>
                 <div class="total-row grand">
-                    <span>Total</span>
+                    <span>Grand Total</span>
                     <span id="grandTotalDisplay">€ 0.00</span>
                 </div>
             </div>
@@ -348,7 +424,7 @@
     </div>
 
     <footer>
-        no tracking, no cookies, no data copied, all is client side, private.
+        no tracking, no cookies, no data copied, private.
         <a onclick="openPrivacyModal()">Learn more</a>
     </footer>
 
@@ -359,28 +435,23 @@
             <button class="btn btn-sm" onclick="document.getElementById('privacyModal').close()">✕</button>
         </div>
         <div class="modal-body">
-            <p>This application is 100% client-side. Your data never leaves your browser.</p>
-            <ul>
-                <li><strong>Local Storage:</strong> Data is kept in your browser's <code>localStorage</code>.</li>
-                <li><strong>Keys:</strong> <code>invapp.parties</code>, <code>invapp.lastDraft</code>, <code>invapp.settings</code>.</li>
-                <li><strong>Deletion:</strong> You can delete specific entries or use the "Clear All" button below.</li>
-            </ul>
-
+            <p>Data is stored in your browser's <code>localStorage</code>. No servers are involved.</p>
+            
             <div class="storage-counts" id="storageCounts">
                 Loading counts...
             </div>
 
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                 <button class="btn btn-sm" onclick="exportData()">Export JSON</button>
-                <button class="btn btn-sm btn-danger" onclick="clearAllData()">Clear ALL data</button>
+                <button class="btn btn-sm btn-danger" onclick="clearAllData()">Clear ALL</button>
             </div>
 
             <div class="import-actions">
                 <label>Import Data (JSON)</label>
-                <input type="file" id="importFile" accept=".json" style="margin-bottom: 0.5rem;">
+                <input type="file" id="importFile" accept=".json" style="margin-bottom: 0.5rem; font-size: 0.8rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
                     <input type="checkbox" id="replaceToggle">
-                    <label for="replaceToggle" style="margin:0; font-weight: normal;">Replace All (Wipe existing first)</label>
+                    <label for="replaceToggle" style="margin:0; font-weight: normal; font-size: 0.85rem;">Replace All (Wipe existing)</label>
                 </div>
                 <button class="btn btn-sm btn-primary" onclick="handleImport()">Process Import</button>
             </div>
@@ -432,7 +503,6 @@
             loadDraft();
             updateCurrency();
             
-            // Add initial row if draft is empty
             if (document.querySelectorAll('.item-row').length === 0) {
                 addLineItem();
             }
@@ -442,7 +512,7 @@
             const el = document.getElementById('status');
             el.textContent = msg;
             el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 3000);
+            setTimeout(() => el.classList.remove('show'), 2500);
         }
 
         /**
@@ -474,7 +544,7 @@
         function handleSaveNew(kind) {
             const text = document.getElementById(`${kind}Text`).value.trim();
             if (!text) return alert("Please enter details first.");
-            const label = prompt("Enter a label for this contact (e.g. Company Name):");
+            const label = prompt("Label for this contact:");
             if (!label) return;
 
             const newEntry = {
@@ -488,12 +558,12 @@
             setStorage(KEYS.PARTIES, parties);
             hydrateDropdowns();
             document.getElementById(`${kind}Select`).value = newEntry.id;
-            showStatus(`Saved new ${kind} entry.`);
+            showStatus(`Saved ${label}`);
         }
 
         function handleUpdate(kind) {
             const id = document.getElementById(`${kind}Select`).value;
-            if (!id) return alert("Select a saved entry to update.");
+            if (!id) return alert("Select a saved contact to update.");
             const text = document.getElementById(`${kind}Text`).value.trim();
             
             const idx = parties[kind].findIndex(p => p.id === id);
@@ -505,19 +575,19 @@
 
             setStorage(KEYS.PARTIES, parties);
             hydrateDropdowns();
-            showStatus(`Updated ${kind} entry.`);
+            showStatus(`Updated contact`);
         }
 
         function handleDelete(kind) {
             const id = document.getElementById(`${kind}Select`).value;
             if (!id) return;
-            if (!confirm("Are you sure you want to delete this saved entry?")) return;
+            if (!confirm("Delete this saved contact?")) return;
 
             parties[kind] = parties[kind].filter(p => p.id !== id);
             setStorage(KEYS.PARTIES, parties);
             document.getElementById(`${kind}Text`).value = '';
             hydrateDropdowns();
-            showStatus(`Deleted ${kind} entry.`);
+            showStatus(`Deleted contact`);
         }
 
         /**
@@ -529,8 +599,16 @@
             row.className = 'item-row';
             row.innerHTML = `
                 <td class="col-desc"><textarea class="in-desc" placeholder="Work description...">${data.desc || ''}</textarea></td>
-                <td class="col-amt"><input type="number" class="in-amt" value="${data.amt || 0}" step="0.01" oninput="recompute()"></td>
-                <td class="col-pct"><input type="number" class="in-pct" value="${data.pct || ''}" step="1" min="0" max="100" placeholder="-" oninput="recompute()"></td>
+                <td class="mobile-grid">
+                    <div class="field-group-mini">
+                        <label class="mobile-only">Amount</label>
+                        <input type="number" class="in-amt" value="${data.amt || 0}" step="0.01" oninput="recompute()">
+                    </div>
+                    <div class="field-group-mini">
+                        <label class="mobile-only">%</label>
+                        <input type="number" class="in-pct" value="${data.pct || ''}" step="1" min="0" max="100" placeholder="%" oninput="recompute()">
+                    </div>
+                </td>
                 <td class="col-sign">
                     <select class="in-sign" onchange="recompute()">
                         <option value="add" ${data.sign === 'deduct' ? '' : 'selected'}>+ Add</option>
@@ -578,7 +656,6 @@
 
         function updateCurrency() {
             settings.currency = document.getElementById('currency').value;
-            // Simple logic: if USD or GBP, use en-US/en-GB locales for formatting
             if (settings.currency === 'USD') settings.locale = 'en-US';
             else if (settings.currency === 'GBP') settings.locale = 'en-GB';
             else if (settings.currency === 'JPY') settings.locale = 'ja-JP';
@@ -608,7 +685,7 @@
                 }))
             };
             setStorage(KEYS.DRAFT, data);
-            showStatus("Draft saved locally.");
+            showStatus("Draft saved locally");
         }
 
         function loadDraft() {
@@ -641,42 +718,40 @@
             const draftExists = !!localStorage.getItem(KEYS.DRAFT);
             
             countsEl.innerHTML = `
-                <strong>Storage Counts:</strong><br>
-                • Saved 'From': ${fromCount}<br>
-                • Saved 'To': ${toCount}<br>
-                • Draft Invoice: ${draftExists ? 'Yes' : 'No'}
+                <strong>Storage:</strong><br>
+                • From contacts: ${fromCount}<br>
+                • To contacts: ${toCount}<br>
+                • Draft exists: ${draftExists ? 'Yes' : 'No'}
             `;
             
             modal.showModal();
         }
 
         function clearAllData() {
-            if (!confirm("Are you SURE? This wipes all saved contacts and your current draft. This cannot be undone.")) return;
-            localStorage.removeItem(KEYS.PARTIES);
-            localStorage.removeItem(KEYS.DRAFT);
-            localStorage.removeItem(KEYS.SETTINGS);
+            if (!confirm("Wipe everything? Contacts and current draft will be lost.")) return;
+            localStorage.clear();
             location.reload();
         }
 
         function exportData() {
             const allData = {
-                parties: parties,
+                parties,
                 draft: getStorage(KEYS.DRAFT, {}),
-                settings: settings,
+                settings,
                 exportedAt: new Date().toISOString()
             };
             const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `invoice-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `invoice-data-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
         async function handleImport() {
             const fileInput = document.getElementById('importFile');
-            if (!fileInput.files[0]) return alert("Select a JSON file first.");
+            if (!fileInput.files[0]) return alert("Select file");
             
             const file = fileInput.files[0];
             const text = await file.text();
@@ -685,17 +760,13 @@
                 const replace = document.getElementById('replaceToggle').checked;
 
                 if (replace) {
-                    if (!confirm("Replacing will wipe current data. Continue?")) return;
                     parties = data.parties || { from: [], to: [] };
                     if (data.draft) setStorage(KEYS.DRAFT, data.draft);
                     if (data.settings) setStorage(KEYS.SETTINGS, data.settings);
                 } else {
-                    // Merge logic
                     const merge = (list, incoming) => {
                         const existingIds = new Set(list.map(p => p.id));
-                        incoming.forEach(p => {
-                            if (!existingIds.has(p.id)) list.push(p);
-                        });
+                        incoming.forEach(p => { if (!existingIds.has(p.id)) list.push(p); });
                     };
                     if (data.parties) {
                         merge(parties.from, data.parties.from || []);
@@ -704,12 +775,9 @@
                 }
 
                 setStorage(KEYS.PARTIES, parties);
-                showStatus("Import successful. Reloading...");
-                setTimeout(() => location.reload(), 1000);
-
-            } catch (e) {
-                alert("Invalid JSON file.");
-            }
+                showStatus("Imported successfully");
+                setTimeout(() => location.reload(), 800);
+            } catch (e) { alert("Invalid file"); }
         }
 
         /**
@@ -770,7 +838,7 @@
                             widths: ['*', 'auto', 'auto', 'auto', 'auto'],
                             body: [
                                 [
-                                    { text: 'Description', fillHighlight: true, bold: true, color: '#64748b' },
+                                    { text: 'Description', bold: true, color: '#64748b' },
                                     { text: 'Amount', bold: true, color: '#64748b' },
                                     { text: '%', bold: true, color: '#64748b' },
                                     { text: 'Sign', bold: true, color: '#64748b' },
@@ -804,7 +872,7 @@
                                     { canvas: [{ type: 'line', x1: 0, y1: 10, x2: 200, y2: 10, lineWidth: 1, lineColor: '#e2e8f0' }] },
                                     {
                                         columns: [
-                                            { text: 'GRAND TOTAL', bold: true, fontSize: 14 },
+                                            { text: 'TOTAL', bold: true, fontSize: 14 },
                                             { text: formatMoney(grandTotal), bold: true, fontSize: 14, alignment: 'right' }
                                         ],
                                         margin: [0, 15, 0, 0]
@@ -820,16 +888,11 @@
                         ]
                     } : null
                 ],
-                styles: {
-                    defaultStyle: { font: 'Roboto' }
-                },
-                defaultStyle: {
-                    fontSize: 10
-                }
+                defaultStyle: { fontSize: 10 }
             };
 
             pdfMake.createPdf(docDefinition).download('invoice.pdf');
-            showStatus("PDF generated.");
+            showStatus("PDF downloading...");
         }
     </script>
 </body>
